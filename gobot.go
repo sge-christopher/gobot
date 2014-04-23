@@ -126,12 +126,13 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "gobot"
 	app.Usage = "handle the robot things"
+	app.Version = "0.0.1"
 
 	app.Commands = []cli.Command{
 		{
 			Name:      "bundle",
 			ShortName: "b",
-			Usage:     "bundles each directory in the workspace if it contains a Gemfile",
+			Usage:     "Bundles each directory in the workspace if it contains a Gemfile",
 			Action: func(c *cli.Context) {
 				// Gets a []string of directory names from our workspace
 				dirs, err := getDirs(ws)
@@ -192,8 +193,9 @@ func main() {
 			},
 		},
 		{
-			Name:      "head",
+			Name:      "heads",
 			ShortName: "ch",
+			Usage:     "Returns the current head + branch of each repo in the workspace",
 			Action: func(*cli.Context) {
 				dirs, err := getDirs(ws)
 				errHandler(err, true)
