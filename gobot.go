@@ -120,7 +120,7 @@ func main() {
 
 	ws := os.Getenv("SPITFIRE_WORKSPACE")
 	if len(ws) < 1 {
-		panic("SPITFIRE_WORKSPACE is not set")
+		panic(fail + "SPITFIRE_WORKSPACE is not set" + reset)
 	}
 
 	app := cli.NewApp()
