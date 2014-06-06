@@ -11,12 +11,12 @@ import (
 )
 
 var (
-	success string = ansi.ColorCode("green")
-	fail    string = ansi.ColorCode("red")
-	reset   string = ansi.ColorCode("reset")
-	info    string = ansi.ColorCode("cyan")
-	callout string = ansi.ColorCode("white+b")
-	yellow  string = ansi.ColorCode("yellow")
+	success = ansi.ColorCode("green")
+	fail    = ansi.ColorCode("red")
+	reset   = ansi.ColorCode("reset")
+	info    = ansi.ColorCode("cyan")
+	callout = ansi.ColorCode("white+b")
+	yellow  = ansi.ColorCode("yellow")
 )
 
 // Function to get the directories in the given workspace ws
@@ -108,6 +108,19 @@ func gitCommitsSince(commit string) (string, error) {
 	return out.String(), nil
 }
 
+func gitCheckout(ref string) (string, error) {
+	var out bytes.Buffer
+	cmd := exec.Command("git", "checkout", ref)
+	cmd.Stdout = &out
+	err := cmd.Run()
+
+	if err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
+}
+
 func main() {
 	errHandler := func(err error, shouldBreak bool) {
 		if err != nil {
@@ -140,10 +153,10 @@ func main() {
 
 				// Iterate over the directory names and bundle if there is a Gemfile
 				for _, d := range dirs {
-					curr_dir := ws + "/" + d
+					currDir := ws + "/" + d
 
-					if _, err := os.Stat(curr_dir + "/Gemfile"); err == nil {
-						if err := os.Chdir(curr_dir); err == nil {
+					if _, err := os.Stat(currDir + "/Gemfile"); err == nil {
+						if err := os.Chdir(currDir); err == nil {
 							out, err := exec.Command("bundle").Output()
 							if err != nil {
 								fmt.Printf("%s%s failed to bundle:\n%s%s\n", fail, d, string(out), reset)
@@ -164,10 +177,10 @@ func main() {
 				errHandler(err, true)
 
 				for _, d := range dirs {
-					curr_dir := ws + "/" + d
+					currDir := ws + "/" + d
 
 					// Change to the working directory
-					os.Chdir(curr_dir)
+					os.Chdir(currDir)
 					m, err := gitStatus()
 
 					if err != nil {
@@ -196,15 +209,48 @@ func main() {
 			Name:      "heads",
 			ShortName: "ch",
 			Usage:     "Returns the current head + branch of each repo in the workspace",
-			Action: func(*cli.Context) {
+			Action: func(c *cli.Context) {
 				dirs, err := getDirs(ws)
 				errHandler(err, true)
 
 				for _, d := range dirs {
-					curr_dir := ws + "/" + d
-					os.Chdir(curr_dir)
+					currDir := ws + "/" + d
+					os.Chdir(currDir)
 
 					msg, err := gitCurrentHead()
+					errHandler(err, false)
+
+					branch, err := gitCurrentBranch()
+					errHandler(err, false)
+
+					repo := callout + d + reset
+					msgArr := strings.Split(msg, " ")
+					commit := yellow + msgArr[0] + reset
+					message := info + strings.Join(msgArr[1:], " ") + reset
+					fmt.Println(repo + "(" + branch + ")\n" + commit + " " + message)
+				}
+				return
+			},
+		},
+		{
+			Name:      "checkout",
+			ShortName: "co",
+			Usage:     "checkout the reference supplied in each directory",
+			Action: func(c *cli.Context) {
+				var ref string
+				if len(c.Args()) > 0 {
+					ref = c.Args()[0]
+				} else {
+					panic("Missing reference to check out")
+				}
+				dirs, err := getDirs(ws)
+				errHandler(err, true)
+
+				for _, d := range dirs {
+					currDir := ws + "/" + d
+					os.Chdir(currDir)
+
+					msg, err := gitCheckout(ref)
 					errHandler(err, false)
 
 					branch, err := gitCurrentBranch()
